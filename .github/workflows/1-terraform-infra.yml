@@ -1,0 +1,108 @@
+name: '1-Terraform EKS Manual Deploy-APPLY/DESTROY'
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - apply
+          - destroy
+        default: 'apply'
+      aws_region:
+        description: 'AWS Region (e.g., us-east-1)'
+        required: true
+        default: 'us-east-1'
+      project_name:
+        description: 'Unique Project Name (e.g., staging-eks-demo)'
+        required: true
+        default: 'staging-eks-demo'
+      instance_types:
+        description: 'Select the instance (e.g: t2.medium)'
+        required: true
+        default: 't3.medium'
+
+      cluster_version:
+        description: 'EKS Kubernetes Version (e.g., 1.28)'
+        required: true
+        default: '1.28'
+
+# THis for backend.tf file variable input 
+      tf_state_bucket:
+        description: 'S3 bucket for Terraform state file'
+        required: true
+        default: 'staging-eks-demo-tfstate-t1'
+      tf_lock_table:
+        description: 'DynamoDB table for Terraform state locking'
+        required: true
+        default: 'staging-eks-demo-tf-lock'
+
+jobs:
+  terraform:
+    name: 'Terraform Execution'
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ github.event.inputs.aws_region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false # As requested, disable the wrapper
+
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ github.event.inputs.tf_state_bucket }}" \
+            -backend-config="key=staging/${{ github.event.inputs.project_name }}/terraform.tfstate" \
+            -backend-config="region=${{ github.event.inputs.aws_region }}" \
+            -backend-config="dynamodb_table=${{ github.event.inputs.tf_lock_table }}"
+        working-directory: ./terraform-project 
+
+      - name: Create tfvars.json file
+        run: |
+          echo '{' > my-vars.tfvars.json
+          echo '  "aws_region": "${{ github.event.inputs.aws_region }}",' >> my-vars.tfvars.json
+          echo '  "project_name": "${{ github.event.inputs.project_name }}",' >> my-vars.tfvars.json
+          echo '  "cluster_version": "${{ github.event.inputs.cluster_version }}",' >> my-vars.tfvars.json
+          echo '  "instance_types": ["${{ github.event.inputs.instance_types }}"]' >> my-vars.tfvars.json
+          echo '}' >> my-vars.tfvars.json
+        working-directory: ./terraform-project 
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+        working-directory: ./terraform-project 
+
+      # --- APPLY LOGIC ---
+      - name: Terraform Plan and Apply
+        if: github.event.inputs.action == 'apply'
+        run: |
+          terraform plan -input=false -out=tfplan -var-file="my-vars.tfvars.json"
+
+          terraform apply -auto-approve -input=false tfplan
+        working-directory: ./terraform-project 
+        
+      # --- DESTROY LOGIC ---
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          terraform destroy -auto-approve -input=false -var-file="my-vars.tfvars.json"
+
+        working-directory: ./terraform-project 
