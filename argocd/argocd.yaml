@@ -6,11 +6,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/abohmeed/currencyconverter.git'
+    repoURL: 'https://github.com/akshayghosh30/AgroCdAppDeploy.git'
     targetRevision: HEAD
     path: argocd
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: 'https://DEE021DE4600FC22CB17BC86858B6BD0.gr7.us-east-2.eks.amazonaws.com'
     namespace: argocd
   syncPolicy:
     automated:
