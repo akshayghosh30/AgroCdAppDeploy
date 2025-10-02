@@ -55,6 +55,7 @@ jobs:
 
 
       - name: Delete Ingress and Wait for ALB Deletion
+        if: false
         run: |
           # Fetching ALB HOSTNAME 
           ALB_HOSTNAME=$(kubectl get ingress argocd-server-ingress -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
