@@ -25,7 +25,7 @@ spec:
                 port:
                   number: 80
     # Rule for the Currency Converter Application
-    - host: app.theutility.shop
+    - host: application.theutility.shop
       http:
         paths:
           - path: /
