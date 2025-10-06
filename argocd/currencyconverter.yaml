@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/akshayghosh30/AgroCdAppDeploy.git'
-    targetRevision: HEAD
+    targetRevision: applicationsetup
     path: k8s-kustomize/overlays/production
   destination:
     server: 'https://kubernetes.default.svc'
