@@ -34,4 +34,4 @@ spec:
               service:
                 name: currency-converter-service # Checked and verified,matching with service
                 port:
-                  number: 81 # This must match the port defined in your Service
+                  number: 80 # This must match the port defined in your Service
