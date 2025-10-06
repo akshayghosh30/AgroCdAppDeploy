@@ -2,7 +2,13 @@
   {
     "op": "replace",
     "path": "/spec/rules/0/host",
-    "value": "prod.currencyconverter.local"
+    "value": "argocd.theutility.shop"
+  },
+
+    {
+    "op": "replace",
+    "path": "/spec/rules/0/host",
+    "value": "application.theutility.shop"
   }
 ]
 

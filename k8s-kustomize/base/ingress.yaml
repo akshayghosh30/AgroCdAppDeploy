@@ -1,17 +1,37 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: currency-converter-ingress
+  name: shared-main-ingress
+  namespace: argocd
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    # adding the shared-ingress-group to use it post app deployment
+    alb.ingress.kubernetes.io/group.name: shared-ingress-group
+    #added this for redirection to http
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
 spec:
+  ingressClassName: alb
   rules:
-  - host: currencyconverter.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: currency-converter-service
-            port:
-              number: 5555
-
+    # Rule for ArgoCD Server
+    - host: argocd.theutility.shop
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
+    # Rule for the Currency Converter Application
+    - host: app.theutility.shop
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: currency-converter-service # Checked and verified,matching with service
+                port:
+                  number: 80 # This must match the port defined in your Service
