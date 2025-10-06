@@ -7,5 +7,7 @@ spec:
   selector:
     app: currency-converter
   ports:
-  - port: 5555
+  - protocol: TCP
+    name: http
+    port: 80
     targetPort: 5555
