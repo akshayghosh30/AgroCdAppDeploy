@@ -11,7 +11,7 @@ spec:
     path: k8s-kustomize/overlays/production
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: default
+    namespace: argocd
   syncPolicy:
     automated:
       selfHeal: true
