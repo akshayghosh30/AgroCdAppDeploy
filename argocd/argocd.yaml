@@ -7,7 +7,8 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/akshayghosh30/AgroCdAppDeploy.git'
-    targetRevision: applicationsetup
+    #targetRevision: applicationsetup
+    branch: applicationsetup
     path: argocd
   destination:
     server: 'https://kubernetes.default.svc'
