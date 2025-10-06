@@ -12,7 +12,7 @@ patches:
     - op: replace
       path: /spec/rules/1/host
       value: application.theutility.shop
-
+      
   target:
     kind: Ingress
     name: shared-main-ingress 
@@ -20,4 +20,4 @@ patches:
 - path: deployment-patch.yaml
   target:
     kind: Deployment
-    name: currency-converter 
+    name: currency-converter
