@@ -28,7 +28,7 @@ spec:
     - host: application.theutility.shop
       http:
         paths:
-          - path: /
+          - path: /app
             pathType: Prefix
             backend:
               service:
