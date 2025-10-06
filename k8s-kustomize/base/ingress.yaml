@@ -9,7 +9,7 @@ metadata:
     # adding the shared-ingress-group to use it post app deployment
     alb.ingress.kubernetes.io/group.name: shared-ingress-group
     #added this for redirection to http
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTP":81}]'
 spec:
   ingressClassName: alb
   rules:
@@ -34,4 +34,4 @@ spec:
               service:
                 name: currency-converter-service # Checked and verified,matching with service
                 port:
-                  number: 80 # This must match the port defined in your Service
+                  number: 81 # This must match the port defined in your Service
