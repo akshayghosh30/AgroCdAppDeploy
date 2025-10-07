@@ -249,28 +249,51 @@ jobs:
           echo "=========================================="
           sleep 3
       
-      #-------------------------------------------------------------------------------------------------------------------------------
+    #-------------------------------------------------------------------------------------------------------------------------------
       # 6. Expose ArgoCD Server using Ingress
       #-------------------------------------------------------------------------------------------------------------------------------
-      - name: Apply ArgoCD Application Manifests
+      - name: Expose ArgoCD Server
         run: |
           echo "=========================================="
-          echo "Applying ArgoCD Application Manifests"
+          echo "Creating Ingress for ArgoCD"
           echo "=========================================="
           
-          echo "Applying manifests from argocd/ directory..."
+          echo "Waiting for ArgoCD server to be ready..."
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+          echo "---> Correct: ArgoCD server is ready"
+          
+          echo ""
+          echo "Applying ArgoCD Ingress manifest..."
           kubectl apply -f argocd/
           
           echo ""
-          echo "Checking Ingress resources:"
-          kubectl get ingress -A
+          echo "Checking ArgoCD Ingress resource:"
+          kubectl get ingress -n argocd
           echo "=========================================="
           sleep 3
       
       #-------------------------------------------------------------------------------------------------------------------------------
-      # 7. Get the ALB DNS Name for ArgoCD
+      # 7. Apply Base Application Ingress (for Currency Converter)
       #-------------------------------------------------------------------------------------------------------------------------------
-      - name: Get Ingress URL
+      # - name: Apply Application Ingress
+      #   run: |
+      #     echo "=========================================="
+      #     echo "Applying Application Ingress"
+      #     echo "=========================================="
+          
+      #     echo "Applying base ingress manifest..."
+      #     kubectl apply -f k8s/base/ingress.yaml
+          
+      #     echo ""
+      #     echo "Checking Application Ingress resource:"
+      #     kubectl get ingress -n default
+      #     echo "=========================================="
+      #     sleep 3
+      
+      # #-------------------------------------------------------------------------------------------------------------------------------
+      # 8. Wait for ALB Provisioning and Get DNS Names
+      #-------------------------------------------------------------------------------------------------------------------------------
+      - name: Get Ingress URLs
         run: |
           echo "=========================================="
           echo "Waiting for ALB to be provisioned..."
@@ -278,35 +301,53 @@ jobs:
           echo "This may take 2-3 minutes..."
           echo ""
           
-          # Wait for the argocd-ingress first as it's a primary indicator
-          echo "Waiting for argocd-ingress to get an address..."
-          kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' ingress/argocd-ingress -n argocd --timeout=180s || echo "ALERT---> Timeout reached waiting for argocd-ingress, continuing..."
-
-          # Now wait for the app-ingress specifically
-          echo "Waiting for app-ingress to get an address..."
-          kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' ingress/app-ingress -n default --timeout=60s || echo "ALERT---> Timeout reached waiting for app-ingress, checking status..."
-
+          # Wait for ArgoCD Ingress
+          echo "Checking ArgoCD Ingress..."
+          kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' \
+            ingress/argocd-ingress -n argocd --timeout=180s || echo "ALERT---> ArgoCD Ingress timeout, checking status..."
+          
           echo ""
-          echo "Ingress Details:"
-          kubectl describe ingress app-ingress -n default || true
-                      
-          echo "Ingress Details:"
-          kubectl describe ingress argocd-ingress -n argocd || true
+          echo "Checking Application Ingress..."
+          kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' \
+            ingress/app-ingress -n default --timeout=180s || echo "ALERT---> App Ingress timeout, checking status..."
           
           echo ""
           echo "=========================================="
-          # Get the hostname from either Ingress, they will be the same
-          ALB_HOSTNAME=$(kubectl get ingress app-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          echo "Ingress Status Summary"
+          echo "=========================================="
           
-          if [ -n "$ALB_HOSTNAME" ]; then
-            echo "---> Correct: ALB DNS  URL is ready:"
-            echo " --> $ALB_HOSTNAME"
+          # Get ArgoCD ALB hostname
+          ARGOCD_ALB=$(kubectl get ingress argocd-ingress -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          
+          # Get App ALB hostname
+          APP_ALB=$(kubectl get ingress app-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          
+          echo ""
+          echo "1. ArgoCD Ingress (argocd namespace):"
+          if [ -n "$ARGOCD_ALB" ]; then
+            echo "   ---> Correct: ALB DNS ready"
+            echo "   --> Hostname: argocd.theutility.shop"
+            echo "   --> ALB: $ARGOCD_ALB"
           else
-            echo "ALERT---> ALB not ready yet. Check again in a few minutes with:"
-            echo "   kubectl get ingress -A"
+            echo "   ALERT---> ALB not ready yet"
+            kubectl describe ingress argocd-ingress -n argocd || true
           fi
+          
+          echo ""
+          echo "2. Application Ingress (default namespace):"
+          if [ -n "$APP_ALB" ]; then
+            echo "   ---> Correct: ALB DNS ready"
+            echo "   --> Hostname: app.theutility.shop"
+            echo "   --> ALB: $APP_ALB"
+          else
+            echo "   ALERT---> ALB not ready yet"
+            kubectl describe ingress app-ingress -n default || true
+          fi
+          
+          echo ""
+          echo "NOTE: Both ingresses share the same ALB due to group.name annotation"
           echo "=========================================="
-
+          
           echo ""
           echo "=========================================="
           echo "ArgoCD Login Credentials"
