@@ -85,8 +85,7 @@ jobs:
           echo "Capturing ALB Hostname"
           echo "=========================================="
           
-          # This command correctly targets the app-ingress in the default namespace.
-          ALB_HOSTNAME=$(kubectl get ingress app-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          ALB_HOSTNAME=$(kubectl get ingress shared-main-ingress -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
           
           if [ -n "$ALB_HOSTNAME" ]; then
             echo "---> Correct: Found ALB hostname: $ALB_HOSTNAME"
@@ -99,34 +98,22 @@ jobs:
 #-------------------------------------------------------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------------------------------------------------------
-      # 3. Delete ArgoCD Applications and Ingresses
-      - name: Delete ArgoCD Applications and Ingresses
+      # 3. Delete ArgoCD Ingress and manifests
+      - name: Delete ArgoCD Ingress
         run: |
           echo "=========================================="
-          echo "Deleting ArgoCD Applications and Ingresses"
+          echo "Deleting ArgoCD Ingress"
           echo "=========================================="
           
-          # First, remove finalizers from all ArgoCD Applications
-          echo "Removing finalizers from ArgoCD Applications..."
-          for app in $(kubectl get applications -n argocd -o name 2>/dev/null); do
-            echo "  Patching $app to remove finalizers..."
-            kubectl patch $app -n argocd -p '{"metadata":{"finalizers":null}}' --type=merge 2>/dev/null || true
-          done
-          echo "---> Correct: Finalizers removed"
+          echo "Deleting objects from argocd/ directory..."
+          kubectl delete -f argocd/ --ignore-not-found=true || true
           
           echo ""
-          echo "Deleting ArgoCD Application manifests..."
-          kubectl delete -f argocd/ --ignore-not-found=true --wait=false || true
+          echo "Explicitly deleting ingress if it exists..."
+          kubectl delete ingress shared-main-ingress -n argocd --ignore-not-found=true || true
           
           echo ""
-          echo "Explicitly deleting app-ingress from 'default' namespace..."
-          kubectl delete ingress app-ingress -n default --ignore-not-found=true --wait=false || true
-          
-          echo "Explicitly deleting argocd-ingress from 'argocd' namespace..."
-          kubectl delete ingress argocd-ingress -n argocd --ignore-not-found=true --wait=false || true
-
-          echo ""
-          echo "---> Correct: Deletion initiated"
+          echo "---> Correct: Ingress deletion initiated"
           echo "Waiting 30 seconds for ALB Controller to start teardown..."
           sleep 30
           echo "=========================================="
@@ -183,7 +170,7 @@ jobs:
           echo "=========================================="
           echo "Waiting for Target Groups to be cleaned up"
           echo "=========================================="
-          echo "Waiting 30 seconds for AWS to clean up target groups..."
+          echo "Waiting 60 seconds for AWS to clean up target groups..."
           sleep 30
           echo "---> Correct: Target group cleanup wait complete"
           echo "=========================================="
@@ -346,4 +333,3 @@ jobs:
           echo "=========================================="
           echo "=========================================="
 #-------------------------------------------------------------------------------------------------------------------------------
-

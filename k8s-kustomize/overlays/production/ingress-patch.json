@@ -1,7 +1,7 @@
 [
   {
     "op": "replace",
-    "path": "/spec/rules/0/host",
+    "path": "/spec/rules/1/host",
     "value": "app.theutility.shop"
   }
 ]

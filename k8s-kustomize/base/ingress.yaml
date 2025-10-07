@@ -1,17 +1,14 @@
-
-
 # k8s/base/ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: app-ingress # Renamed for clarity
+  name: app-main-ingress # Renamed for clarity
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/group.name: shared-ingress-group # This is the magic key
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
 spec:
-#Removed ArgoCD rule
   ingressClassName: alb
   rules:
     # Rule for the Currency Converter Application
