@@ -85,6 +85,7 @@ jobs:
           echo "Capturing ALB Hostname"
           echo "=========================================="
           
+          # This command correctly targets the app-ingress in the default namespace.
           ALB_HOSTNAME=$(kubectl get ingress app-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
           
           if [ -n "$ALB_HOSTNAME" ]; then
@@ -99,20 +100,20 @@ jobs:
 
 #-------------------------------------------------------------------------------------------------------------------------------
       # 3. Delete ArgoCD Ingress and manifests
-      - name: Delete ArgoCD Ingress
+      - name: Delete ArgoCD Ingress and Applications
         run: |
           echo "=========================================="
-          echo "Deleting ArgoCD Ingress"
+          echo "Deleting ArgoCD Applications and Ingresses"
           echo "=========================================="
           
-          echo "Deleting objects from argocd/ directory..."
+          echo "Deleting objects from argocd/ directory (ArgoCD Apps and Ingress)..."
           kubectl delete -f argocd/ --ignore-not-found=true || true
           
           echo ""
-          echo "Explicitly deleting ingress if it exists..."
+          echo "Explicitly deleting app-ingress from 'default' namespace..."
           kubectl delete ingress app-ingress -n default --ignore-not-found=true || true
           
-          echo "Explicitly deleting ingress if it exists..."
+          echo "Explicitly deleting argocd-ingress from 'argocd' namespace..."
           kubectl delete ingress argocd-ingress -n argocd --ignore-not-found=true || true
 
           echo ""
@@ -173,7 +174,7 @@ jobs:
           echo "=========================================="
           echo "Waiting for Target Groups to be cleaned up"
           echo "=========================================="
-          echo "Waiting 60 seconds for AWS to clean up target groups..."
+          echo "Waiting 30 seconds for AWS to clean up target groups..."
           sleep 30
           echo "---> Correct: Target group cleanup wait complete"
           echo "=========================================="
