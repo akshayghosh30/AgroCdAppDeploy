@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/akshayghosh30/AgroCdAppDeploy.git'
+    repoURL: 'https://github.com/aashwin11backsup/AgroCdAppDeploy.git'
     targetRevision: applicationsetup
-    branch: applicationsetup
+#Branch tag is not needed. The TargetRevision decides the branch being used.
     path: argocd
   destination:
     server: 'https://kubernetes.default.svc'

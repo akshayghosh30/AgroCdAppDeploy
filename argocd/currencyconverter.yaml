@@ -6,10 +6,10 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/akshayghosh30/AgroCdAppDeploy.git'
+    repoURL: 'https://github.com/aashwin11backsup/AgroCdAppDeploy.git'
     targetRevision: applicationsetup
-    branch: applicationsetup
     path: k8s-kustomize/overlays/production
+
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: default

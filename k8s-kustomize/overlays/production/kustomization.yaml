@@ -1,5 +1,8 @@
+# k8s/overlays/production/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+namespace: default
 
 resources:
 - ../../base
@@ -7,16 +10,12 @@ resources:
 patches:
 - patch: |-
     - op: replace
-      path: /spec/rules/0/host
-      value: argocd.theutility.shop
-    - op: replace
-      path: /spec/rules/1/host
-      value: app.theutility.shop
-      
+      path: /spec/rules/0/host      # The only rule is at index 0
+      value: app.theutility.shop # Set the correct hostname
   target:
     kind: Ingress
-    name: shared-main-ingress 
-    
+    name: app-main-ingress
+
 - path: deployment-patch.yaml
   target:
     kind: Deployment
