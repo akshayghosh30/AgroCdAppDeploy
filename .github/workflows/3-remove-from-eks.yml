@@ -85,7 +85,7 @@ jobs:
           echo "Capturing ALB Hostname"
           echo "=========================================="
           
-          ALB_HOSTNAME=$(kubectl get ingress shared-main-ingress -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          ALB_HOSTNAME=$(kubectl get ingress app--ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
           
           if [ -n "$ALB_HOSTNAME" ]; then
             echo "---> Correct: Found ALB hostname: $ALB_HOSTNAME"
@@ -110,8 +110,11 @@ jobs:
           
           echo ""
           echo "Explicitly deleting ingress if it exists..."
-          kubectl delete ingress shared-main-ingress -n argocd --ignore-not-found=true || true
+          kubectl delete ingress app-ingress -n default --ignore-not-found=true || true
           
+          echo "Explicitly deleting ingress if it exists..."
+          kubectl delete ingress argocd-ingress -n argocd --ignore-not-found=true || true
+
           echo ""
           echo "---> Correct: Ingress deletion initiated"
           echo "Waiting 30 seconds for ALB Controller to start teardown..."
