@@ -26,7 +26,7 @@ on:
       cluster_version:
         description: 'EKS Kubernetes Version (e.g., 1.28)'
         required: true
-        default: '1.28'
+        default: '1.30'
       # This for backend.tf file variable input 
       tf_state_bucket:
         description: 'S3 bucket for Terraform state file'
