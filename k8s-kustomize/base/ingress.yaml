@@ -1,39 +1,27 @@
-Run echo "=========================================="
-==========================================
-Waiting for ALB to be provisioned...
-==========================================
-This may take 2-3 minutes...
-Error from server (NotFound): ingresses.networking.k8s.io "app-ingress" not found
-ALERT---> Timeout reached, checking status...
-Ingress Details:
-Error from server (NotFound): ingresses.networking.k8s.io "app-ingress" not found
-Ingress Details:
-Name:             argocd-ingress
-Labels:           <none>
-Namespace:        argocd
-Address:          
-Ingress Class:    alb
-Default backend:  <default>
-Rules:
-  Host                    Path  Backends
-  ----                    ----  --------
-  argocd.theutility.shop  
-                          /   argocd-server:80 (10.0.101.71:8080)
-Annotations:              alb.ingress.kubernetes.io/group.name: shared-ingress-group
-                          alb.ingress.kubernetes.io/listen-ports: [{"HTTP":80}]
-                          alb.ingress.kubernetes.io/scheme: internet-facing
-                          alb.ingress.kubernetes.io/target-type: ip
-Events:
-  Type     Reason             Age              From     Message
-  ----     ------             ----             ----     -------
-  Warning  FailedDeployModel  5s               ingress  Failed deploy model due to operation error Elastic Load Balancing v2: CreateLoadBalancer, https response error StatusCode: 400, RequestID: 386bc0f7-a2e9-46f6-a802-e06166ddae1c, OperationNotPermitted: This AWS account currently does not support creating load balancers. For more information, please contact AWS Support.
-  Warning  FailedBuildModel   2s (x9 over 5s)  ingress  Failed build model due to ingress: argocd/shared-main-ingress: failed to parse listen-ports configuration: `[{"HTTP":80}}]`: invalid character '}' after array element
-==========================================
-ALERT---> ALB not ready yet. Check again in a few minutes with:
-   kubectl get ingress app-ingress -n default
-==========================================
-==========================================
-ArgoCD Login Credentials
-==========================================
-Username: admin
-0s
+
+
+# k8s/base/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress # Renamed for clarity
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: shared-ingress-group # This is the magic key
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+spec:
+#Removed ArgoCD rule
+  ingressClassName: alb
+  rules:
+    # Rule for the Currency Converter Application
+    - host: app.theutility.shop
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: currency-converter-service
+                port:
+                  number: 80
