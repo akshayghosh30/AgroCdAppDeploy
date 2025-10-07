@@ -277,7 +277,7 @@ jobs:
           echo "---> Correct: $READY_PODS/$TOTAL_PODS pods are Running"
           echo "=========================================="
           sleep 3
-      
+          
       #-------------------------------------------------------------------------------------------------------------------------------
       # 6. Expose ArgoCD Server using Ingress
       #-------------------------------------------------------------------------------------------------------------------------------
@@ -295,6 +295,10 @@ jobs:
           echo "Applying Ingress manifest from argocd/ directory..."
           kubectl apply -f argocd/
           
+
+          kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' ingress/shared-main-ingress -n argocd --timeout=180s
+          kubectl get ingress shared-main-ingress -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+      
           echo ""
           echo "Checking Ingress resource:"
           kubectl get ingress -n argocd
