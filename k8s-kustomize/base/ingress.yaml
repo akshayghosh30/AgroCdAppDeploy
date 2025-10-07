@@ -9,7 +9,7 @@ metadata:
     # adding the shared-ingress-group to use it post app deployment
     alb.ingress.kubernetes.io/group.name: shared-ingress-group
     #added this for redirection to http
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTP":81}]'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}}]'
 spec:
   ingressClassName: alb
   rules:
@@ -25,7 +25,7 @@ spec:
                 port:
                   number: 80
     # Rule for the Currency Converter Application
-    - host: application.theutility.shop
+    - host: app.theutility.shop
       http:
         paths:
           - path: /

@@ -11,7 +11,7 @@ patches:
       value: argocd.theutility.shop
     - op: replace
       path: /spec/rules/1/host
-      value: application.theutility.shop
+      value: app.theutility.shop
       
   target:
     kind: Ingress
