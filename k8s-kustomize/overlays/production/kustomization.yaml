@@ -1,23 +1,25 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: default
+#added the namespace here 
 resources:
 - ../../base
 
 patches:
 - patch: |-
+
     - op: replace
       path: /spec/rules/0/host
-      value: argocd.theutility.shop
-    - op: replace
-      path: /spec/rules/1/host
       value: app.theutility.shop
       
   target:
     kind: Ingress
-    name: shared-main-ingress 
+    name: app-ingress # Should be same the name used in k8s-kustomize/base/ingress.yaml 
     
 - path: deployment-patch.yaml
   target:
     kind: Deployment
     name: currency-converter
+
+#Removed the argocd replace code

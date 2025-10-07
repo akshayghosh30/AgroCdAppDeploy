@@ -2,13 +2,6 @@
   {
     "op": "replace",
     "path": "/spec/rules/0/host",
-    "value": "argocd.theutility.shop"
-  },
-
-    {
-    "op": "replace",
-    "path": "/spec/rules/1/host",
     "value": "app.theutility.shop"
   }
 ]
-

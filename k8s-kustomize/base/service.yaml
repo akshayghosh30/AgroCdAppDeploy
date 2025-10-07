@@ -1,3 +1,5 @@
+#NO CHANGR
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,7 +9,7 @@ spec:
   selector:
     app: currency-converter
   ports:
-  - protocol: TCP
-    name: http
-    port: 80
-    targetPort: 5555
+  - name: http
+    protocol: TCP
+    port: 80 
+    targetPort: 5555 
