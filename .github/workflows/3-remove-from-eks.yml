@@ -107,14 +107,15 @@ jobs:
           echo "=========================================="
           
           echo "Deleting objects from argocd/ directory (ArgoCD Apps and Ingress)..."
-          kubectl delete -f argocd/ --ignore-not-found=true || true
+          # Using --wait=false to prevent the workflow from getting stuck here. The next step handles the wait.
+          kubectl delete -f argocd/ --ignore-not-found=true --wait=false || true
           
           echo ""
           echo "Explicitly deleting app-ingress from 'default' namespace..."
-          kubectl delete ingress app-ingress -n default --ignore-not-found=true || true
+          kubectl delete ingress app-ingress -n default --ignore-not-found=true --wait=false || true
           
           echo "Explicitly deleting argocd-ingress from 'argocd' namespace..."
-          kubectl delete ingress argocd-ingress -n argocd --ignore-not-found=true || true
+          kubectl delete ingress argocd-ingress -n argocd --ignore-not-found=true --wait=false || true
 
           echo ""
           echo "---> Correct: Ingress deletion initiated"
@@ -337,3 +338,4 @@ jobs:
           echo "=========================================="
           echo "=========================================="
 #-------------------------------------------------------------------------------------------------------------------------------
+

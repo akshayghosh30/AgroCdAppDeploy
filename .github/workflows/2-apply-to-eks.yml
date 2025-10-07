@@ -148,21 +148,7 @@ jobs:
           echo "IAM Role Name: $ROLE_NAME"
           
           echo ""
-          echo "Cleaning up any existing IRSA resources..."
-          
-          # Delete using eksctl (this removes the CloudFormation stack)
-          eksctl delete iamserviceaccount \
-            --cluster=${{ github.event.inputs.cluster_name }} \
-            --namespace=kube-system \
-            --name=aws-load-balancer-controller \
-            --region=${{ github.event.inputs.aws_region }} || echo "ALERT---> No existing service account to delete (this is OK)"
-          
-          echo ""
-          echo "Waiting 10 seconds for cleanup to complete..."
-          sleep 10
-          
-          echo ""
-          echo "Creating fresh IRSA resources..."
+          echo "Using 'create iamserviceaccount' which will update if it exists..."
           eksctl create iamserviceaccount \
             --cluster=${{ github.event.inputs.cluster_name }} \
             --namespace=kube-system \
@@ -174,7 +160,7 @@ jobs:
             --override-existing-serviceaccounts
           
           echo ""
-          echo "---> Correct: IAM Role and Service Account created"
+          echo "---> Correct: IAM Role and Service Account created/updated"
           echo ""
           echo "Verifying Service Account:"
           kubectl get sa aws-load-balancer-controller -n kube-system -o yaml
@@ -220,24 +206,13 @@ jobs:
             --set enableServiceMutatorWebhook=false
 
           echo ""
-          echo "Waiting 30 seconds for controller to deploy..."
-          sleep 30
+          echo "Waiting for ALB Controller to be ready..."
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=aws-load-balancer-controller -n kube-system --timeout=300s
           
           echo ""
           echo "Checking deployment status:"
           kubectl get deployment aws-load-balancer-controller -n kube-system
-          
-          echo ""
-          echo "Checking pods:"
-          kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller -o wide
-          
-          POD_STATUS=$(kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "NotFound")
-          echo ""
-          if [ "$POD_STATUS" == "Running" ]; then
-            echo "---> Correct: ALB Controller pod is Running"
-          else
-            echo "ALERT---> ALB Controller pod status: $POD_STATUS"
-          fi
+          echo "---> Correct: ALB Controller is ready"
           
           echo ""
           echo "Recent controller logs:"
@@ -264,40 +239,31 @@ jobs:
             --set server.extraArgs={--insecure}
           
           echo ""
-          echo "Waiting 30 seconds for ArgoCD pods to start..."
-          sleep 30
+          echo "Waiting for ArgoCD to be ready..."
+          kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=300s
           
           echo ""
           echo "Checking ArgoCD pods:"
           kubectl get pods -n argocd -o wide
-          
-          READY_PODS=$(kubectl get pods -n argocd --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l || echo "0")
-          TOTAL_PODS=$(kubectl get pods -n argocd --no-headers 2>/dev/null | wc -l || echo "0")
-          echo ""
-          echo "---> Correct: $READY_PODS/$TOTAL_PODS pods are Running"
+          echo "---> Correct: ArgoCD is ready"
           echo "=========================================="
           sleep 3
       
       #-------------------------------------------------------------------------------------------------------------------------------
       # 6. Expose ArgoCD Server using Ingress
       #-------------------------------------------------------------------------------------------------------------------------------
-      - name: Expose ArgoCD Server
+      - name: Apply ArgoCD Application Manifests
         run: |
           echo "=========================================="
-          echo "Creating Ingress for ArgoCD"
+          echo "Applying ArgoCD Application Manifests"
           echo "=========================================="
           
-          echo "Waiting for ArgoCD server to be ready..."
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
-          echo "---> Correct: ArgoCD server is ready"
-          
-          echo ""
-          echo "Applying Ingress manifest from argocd/ directory..."
+          echo "Applying manifests from argocd/ directory..."
           kubectl apply -f argocd/
           
           echo ""
-          echo "Checking Ingress resource:"
-          kubectl get ingress -n argocd
+          echo "Checking Ingress resources:"
+          kubectl get ingress -A
           echo "=========================================="
           sleep 3
       
@@ -312,18 +278,24 @@ jobs:
           echo "This may take 2-3 minutes..."
           echo ""
           
-          kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' ingress/app-ingress -n default --timeout=60s || echo "ALERT---> Timeout reached, checking status..."
+          # Wait for the argocd-ingress first as it's a primary indicator
+          echo "Waiting for argocd-ingress to get an address..."
+          kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' ingress/argocd-ingress -n argocd --timeout=180s || echo "ALERT---> Timeout reached waiting for argocd-ingress, continuing..."
+
+          # Now wait for the app-ingress specifically
+          echo "Waiting for app-ingress to get an address..."
+          kubectl wait --for=jsonpath='{.status.loadBalancer.ingress[0].hostname}' ingress/app-ingress -n default --timeout=60s || echo "ALERT---> Timeout reached waiting for app-ingress, checking status..."
 
           echo ""
           echo "Ingress Details:"
           kubectl describe ingress app-ingress -n default || true
-                    
-                    
+                      
           echo "Ingress Details:"
           kubectl describe ingress argocd-ingress -n argocd || true
           
           echo ""
           echo "=========================================="
+          # Get the hostname from either Ingress, they will be the same
           ALB_HOSTNAME=$(kubectl get ingress app-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
           
           if [ -n "$ALB_HOSTNAME" ]; then
@@ -331,7 +303,7 @@ jobs:
             echo " --> $ALB_HOSTNAME"
           else
             echo "ALERT---> ALB not ready yet. Check again in a few minutes with:"
-            echo "   kubectl get ingress app-ingress -n default"
+            echo "   kubectl get ingress -A"
           fi
           echo "=========================================="
 
