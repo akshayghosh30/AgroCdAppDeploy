@@ -324,7 +324,7 @@ jobs:
           
           echo ""
           echo "=========================================="
-          ALB_HOSTNAME=$(kubectl get ingress app-ingress -n deafult -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          ALB_HOSTNAME=$(kubectl get ingress app-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
           
           if [ -n "$ALB_HOSTNAME" ]; then
             echo "---> Correct: ALB DNS  URL is ready:"
