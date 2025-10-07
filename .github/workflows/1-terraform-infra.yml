@@ -69,7 +69,7 @@ jobs:
         run: |
           # Initializes Terraform with backend configuration from workflow inputs
           terraform init \
-            -backend-config="bucket="${{ github.event.inputs.tf_state_bucket }}" \
+            -backend-config="bucket=${{ github.event.inputs.tf_state_bucket }}" \
             -backend-config="key=staging/${{ github.event.inputs.project_name }}/terraform.tfstate" \
             -backend-config="region=${{ github.event.inputs.aws_region }}" \
             -backend-config="dynamodb_table=${{ github.event.inputs.tf_lock_table }}"
