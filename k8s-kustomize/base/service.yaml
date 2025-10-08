@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: currency-converter-service
-  namespace: argocd 
+#Removed namespace because its being managed by Kustomization in production/
 spec:
   type: ClusterIP
   selector:
