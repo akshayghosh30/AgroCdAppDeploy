@@ -88,7 +88,7 @@ jobs:
           echo "=========================================="
           kubectl get ingress -n argocd
           echo "---"
-          kubectl describe ingress --all -n argocd
+          kubectl describe ingress argocd-server-ingress -n argocd
           echo "=========================================="
           
           echo ""
@@ -97,7 +97,7 @@ jobs:
           echo "=========================================="
           kubectl get ingress -n default
           echo "---"
-          kubectl describe ingress --all -n default
+          kubectl describe ingress app-main-ingress -n default
           echo "=========================================="
 
           echo ""
