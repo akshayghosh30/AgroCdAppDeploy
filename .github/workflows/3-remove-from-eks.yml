@@ -57,7 +57,7 @@ jobs:
         id: capture_alb
         run: |
           echo "Capturing ALB Hostname..."
-          ALB_HOSTNAME=$(kubectl get ingress shared-main-ingress -n argcd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
+          ALB_HOSTNAME=$(kubectl get ingress argocd-server-ingress -n argcd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
           if [ -n "$ALB_HOSTNAME" ]; then
             echo "Found ALB hostname: $ALB_HOSTNAME"
             echo "alb_hostname=$ALB_HOSTNAME" >> "$GITHUB_OUTPUT"
