@@ -1,0 +1,82 @@
+name: '5-Manual Terraform Unlock'
+
+on:
+  workflow_dispatch:
+    inputs:
+      lock_id:
+        description: 'The Terraform Lock ID to remove'
+        required: true
+      aws_region:
+        description: 'AWS Region (must match your state backend)'
+        required: true
+        default: 'us-east-1'
+      project_name:
+        description: 'Project Name (used in S3 key)'
+        required: true
+        default: 'staging-eks-demo'
+      tf_state_bucket:
+        description: 'S3 bucket for Terraform state'
+        required: true
+        default: 'staging-eks-demo-tfstate-t1'
+      tf_lock_table:
+        description: 'DynamoDB table for Terraform state locking'
+        required: true
+        default: 'staging-eks-demo-tf-lock'
+
+jobs:
+  unlock-state:
+    name: 'Force Unlock Terraform State'
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        shell: bash
+        # This points to your terraform code directory
+        working-directory: ./terraform-project 
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ github.event.inputs.aws_region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        id: init
+        run: |
+          echo "Initializing Terraform with the correct backend configuration..."
+          # This command MUST include the backend config to connect to your state
+          terraform init \
+            -backend-config="bucket=${{ github.event.inputs.tf_state_bucket }}" \
+            -backend-config="key=staging/${{ github.event.inputs.project_name }}/terraform.tfstate" \
+            -backend-config="region=${{ github.event.inputs.aws_region }}" \
+            -backend-config="dynamodb_table=${{ github.event.inputs.tf_lock_table }}"
+
+      - name: Force Unlock
+        id: unlock
+        run: |
+          echo "Attempting to force-unlock state with ID: ${{ github.event.inputs.lock_id }}"
+          terraform force-unlock -force ${{ github.event.inputs.lock_id }}
+          echo "✅ State unlocked successfully."
+
+      - name: Unlock Complete
+        run: |
+          echo "=========================================="
+          echo "✅ UNLOCK COMPLETE"
+          echo "=========================================="
+          echo "The Terraform state lock has been removed."
+          echo "You can now re-run your plan, apply, or destroy workflow."
+          echo "=========================================="
