@@ -266,6 +266,16 @@ jobs:
           echo ""
           echo "Waiting 30 seconds for ArgoCD pods to start..."
           sleep 30
+          echo ""
+          echo "Checking ArgoCD pods:"
+          kubectl get pods -n argocd -o wide
+          
+          READY_PODS=$(kubectl get pods -n argocd --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l || echo "0")
+          TOTAL_PODS=$(kubectl get pods -n argocd --no-headers 2>/dev/null | wc -l || echo "0")
+          echo ""
+          echo "---> Correct: $READY_PODS/$TOTAL_PODS pods are Running"
+          echo "=========================================="
+          sleep 3
 
 
 #------------ STEP DIVIDED INTO 2 PARTS---------------------          
