@@ -46,7 +46,7 @@ jobs:
       run:
         shell: bash
         # --->CHANGE THE DIRECTORY VARIABLE IF THE TERRAFORM DIRECTORY IS CHANGE
-        working-directory: ./terraform-project 
+        working-directory: ./infrastructure 
 
     steps:
       - name: Checkout Code

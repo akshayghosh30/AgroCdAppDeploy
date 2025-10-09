@@ -81,7 +81,10 @@ jobs:
           
           echo "Explicitly deleting Ingress resources to trigger ALB cleanup..."
           kubectl delete ingress --all -n argocd --ignore-not-found=true
+
+          echo "Deleted argocd ingress in argocd namespace: SUCCESS"
           kubectl delete ingress --all -n default --ignore-not-found=true
+          echo "Deleted default ingress in default namespace: SUCCESS"
           
           echo "Waiting 45 seconds for controllers to process deletions..."
           sleep 45

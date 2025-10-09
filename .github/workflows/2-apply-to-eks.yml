@@ -266,33 +266,37 @@ jobs:
           echo ""
           echo "Waiting 30 seconds for ArgoCD pods to start..."
           sleep 30
-          
-          echo ""
-          echo "Checking ArgoCD pods:"
-          kubectl get pods -n argocd -o wide
-          
-          READY_PODS=$(kubectl get pods -n argocd --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l || echo "0")
-          TOTAL_PODS=$(kubectl get pods -n argocd --no-headers 2>/dev/null | wc -l || echo "0")
-          echo ""
-          echo "---> Correct: $READY_PODS/$TOTAL_PODS pods are Running"
-          echo "=========================================="
-          sleep 3
-      
+
+
+#------------ STEP DIVIDED INTO 2 PARTS---------------------          
       #-------------------------------------------------------------------------------------------------------------------------------
-      # 6. Expose ArgoCD Server using Ingress
+      # 6a. --- NEW STEP: Apply Core Cluster Manifests ---
       #-------------------------------------------------------------------------------------------------------------------------------
-      - name: Expose ArgoCD Server
+      - name: Apply ArgoCD Ingress
         run: |
           echo "=========================================="
-          echo "Creating Ingress for ArgoCD"
+          echo "Applying the Ingress for ArgoCD Server"
+          echo "=========================================="
+          # Wait for the argocd-server service to exist before creating the Ingress
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+          
+          # Apply the ingress manifest from its new location
+          kubectl apply -f kubernetes-manifests/argocd-ingress.yaml
+          
+          echo "---> Correct: ArgoCD Ingress applied"
+          echo "=========================================="
+
+      #-------------------------------------------------------------------------------------------------------------------------------
+      # 6b. --- MODIFIED STEP: Apply ArgoCD Application Manifests ---
+      #-------------------------------------------------------------------------------------------------------------------------------
+      - name: Apply ArgoCD Application Definitions
+        run: |
+          echo "=========================================="
+          echo "Applying ArgoCD Application manifests"
           echo "=========================================="
           
-          echo "Waiting for ArgoCD server to be ready..."
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
-          echo "---> Correct: ArgoCD server is ready"
-          
-          echo ""
-          echo "Applying Ingress manifest from argocd/ directory..."
+          # This command now only applies the Application resources (argocd.yaml, etc.)
+          # The Ingress is no longer in this directory.
           kubectl apply -f argocd/
           
           echo ""
@@ -300,7 +304,8 @@ jobs:
           kubectl get ingress -n argocd
           echo "=========================================="
           sleep 3
-      
+
+
       #-------------------------------------------------------------------------------------------------------------------------------
       # 7. Get the ALB DNS Name for ArgoCD
       #-------------------------------------------------------------------------------------------------------------------------------
